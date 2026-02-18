@@ -1,12 +1,7 @@
-// Inject debugging
-window.onerror = function (msg, url, line) {
-    alert("Messenger Error: " + msg + "\nLine: " + line);
-};
-
+// Production Version: Signal Handling & Link Fixes
 (function () {
     try {
         console.log("Messenger Script Starting...");
-        // alert("Messenger Script Loaded"); // Uncomment if needed to verify injection
 
         // Wait for body
         function init() {
@@ -94,9 +89,32 @@ window.onerror = function (msg, url, line) {
             document.body.appendChild(footer);
         }
 
+        // Link Interceptor: Forces external links to open in system browser
+        function initLinkInterceptor() {
+            document.addEventListener('click', function (e) {
+                // Find closest anchor tag
+                const target = e.target.closest('a');
+                if (target && target.href) {
+                    // Check if it's an external link
+                    // 1. Hostname is different from current Facebook/Messenger host
+                    // 2. OR it explicitly has target="_blank"
+                    const currentHost = window.location.hostname;
+                    const linkHost = target.hostname;
+
+                    // Facebook wrapper often keeps you on facebook.com or messenger.com
+                    // If the link goes to youtube, google, etc., open externally.
+                    if (linkHost !== currentHost && linkHost !== '') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log("Opening external link:", target.href);
+                        window.__TAURI__.core.invoke('open_external_link', { url: target.href });
+                    }
+                }
+            }, true); // Capture phase to ensure we get it first
+        }
+
         // Polyfill Notification API to use Tauri's native notification
         function initNotificationPolyfill() {
-            // Only polyfill if we are in Tauri
             if (!window.__TAURI__) return;
 
             class TauriNotification {
@@ -109,8 +127,7 @@ window.onerror = function (msg, url, line) {
                         title: this.title,
                         body: this.body
                     })
-                        .then(() => console.log("Notification sent"))
-                        .catch(e => alert("Notification Error: " + JSON.stringify(e)));
+                        .catch(e => console.error("Failed to send notification:", e));
                 }
 
                 static requestPermission() {
@@ -122,34 +139,28 @@ window.onerror = function (msg, url, line) {
                 }
             }
 
-            // Overwrite standard Notification API
             window.Notification = TauriNotification;
             console.log("Messenger: Notification API Polyfilled");
         }
 
-        // Keep-Alive Mechanism: Silent Audio Loop
-        // This prevents macOS from suspending the WebView when in background.
+        // Keep-Alive Mechanism
         function initKeepAlive() {
             try {
                 const AudioContext = window.AudioContext || window.webkitAudioContext;
                 if (!AudioContext) return;
 
                 const context = new AudioContext();
-
-                // Create a silent oscillator
                 const oscillator = context.createOscillator();
                 const gainNode = context.createGain();
 
                 oscillator.type = 'sine';
-                oscillator.frequency.value = 0.01; // Almost zero frequency
-                gainNode.gain.value = 0.001; // Effectively silent but active
+                oscillator.frequency.value = 0.01;
+                gainNode.gain.value = 0.001;
 
                 oscillator.connect(gainNode);
                 gainNode.connect(context.destination);
-
                 oscillator.start();
 
-                // Resume context if suspended (e.g. by autoplay policy)
                 const resume = () => {
                     if (context.state === 'suspended') {
                         context.resume();
@@ -158,17 +169,14 @@ window.onerror = function (msg, url, line) {
 
                 document.addEventListener('click', resume, { once: true });
                 document.addEventListener('keydown', resume, { once: true });
-
-                console.log("Messenger: Background Keep-Alive Active");
-            } catch (e) {
-                console.error("Messenger: Keep-Alive failed", e);
-            }
+            } catch (e) { }
         }
 
         initNotificationPolyfill();
+        initLinkInterceptor();
         init();
 
-        // Badge Updater: Syncs unread count from title to Dock icon
+        // Badge Updater: Title-based only (Safe Mode)
         function initBadgeUpdater() {
             if (!window.__TAURI__) return;
 
@@ -176,36 +184,30 @@ window.onerror = function (msg, url, line) {
 
             const updateBadge = () => {
                 const title = document.title;
-                // Facebook title format: "(1) Messenger" or "Messenger"
                 const match = title.match(/^\((\d+)\)/);
                 const count = match ? parseInt(match[1], 10) : 0;
 
                 if (count !== lastCount) {
                     lastCount = count;
                     window.__TAURI__.core.invoke('update_badge', { count: count })
-                        .then(() => console.log("Badge updated"))
-                        .catch(e => alert("Badge Update Error: " + JSON.stringify(e)));
+                        .catch(e => console.error("Badge verification failed", e));
                 }
             };
 
-            // Observe title changes
             const observer = new MutationObserver(updateBadge);
             const titleElement = document.querySelector('title');
 
             if (titleElement) {
                 observer.observe(titleElement, { childList: true, characterData: true, subtree: true });
             } else {
-                // Fallback if <title> tag recreation happens (rare but possible in SPAs)
                 setInterval(updateBadge, 2000);
             }
-
-            // Initial check
             updateBadge();
         }
 
         initBadgeUpdater();
-        setTimeout(initKeepAlive, 2000); // Start after initial load
+        setTimeout(initKeepAlive, 2000);
     } catch (e) {
-        alert("Messenger Init Error: " + e);
+        console.error("Messenger Init Failed", e);
     }
 })();
