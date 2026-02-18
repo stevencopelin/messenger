@@ -79,10 +79,91 @@
             window.__TAURI__.core.invoke('credits');
         };
 
+        const testNotify = document.createElement('div');
+        testNotify.id = 'tauri-credits'; // Reuse style
+        testNotify.textContent = 'Test Notification';
+        testNotify.style.marginTop = '2px';
+        testNotify.onclick = function () {
+            console.log("Testing notification...");
+            const n = new Notification('Messenger Test', { body: 'If you see this, notifications are working!' });
+        };
+
         footer.appendChild(btn);
         footer.appendChild(credits);
+        footer.appendChild(testNotify);
         document.body.appendChild(footer);
     }
 
+    // Polyfill Notification API to use Tauri's native notification
+    function initNotificationPolyfill() {
+        // Only polyfill if we are in Tauri
+        if (!window.__TAURI__) return;
+
+        class TauriNotification {
+            constructor(title, options) {
+                this.title = title;
+                this.body = options?.body || '';
+
+                // Invoke Rust command
+                window.__TAURI__.core.invoke('send_notification', {
+                    title: this.title,
+                    body: this.body
+                }).catch(e => console.error("Failed to send notification:", e));
+            }
+
+            static requestPermission() {
+                return Promise.resolve('granted');
+            }
+
+            static get permission() {
+                return 'granted';
+            }
+        }
+
+        // Overwrite standard Notification API
+        window.Notification = TauriNotification;
+        console.log("Messenger: Notification API Polyfilled");
+    }
+
+    // Keep-Alive Mechanism: Silent Audio Loop
+    // This prevents macOS from suspending the WebView when in background.
+    function initKeepAlive() {
+        try {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContext) return;
+
+            const context = new AudioContext();
+
+            // Create a silent oscillator
+            const oscillator = context.createOscillator();
+            const gainNode = context.createGain();
+
+            oscillator.type = 'sine';
+            oscillator.frequency.value = 0.01; // Almost zero frequency
+            gainNode.gain.value = 0.001; // Effectively silent but active
+
+            oscillator.connect(gainNode);
+            gainNode.connect(context.destination);
+
+            oscillator.start();
+
+            // Resume context if suspended (e.g. by autoplay policy)
+            const resume = () => {
+                if (context.state === 'suspended') {
+                    context.resume();
+                }
+            };
+
+            document.addEventListener('click', resume, { once: true });
+            document.addEventListener('keydown', resume, { once: true });
+
+            console.log("Messenger: Background Keep-Alive Active");
+        } catch (e) {
+            console.error("Messenger: Keep-Alive failed", e);
+        }
+    }
+
+    initNotificationPolyfill();
     init();
+    setTimeout(initKeepAlive, 2000); // Start after initial load
 })();
