@@ -25,6 +25,7 @@ fn send_notification(app: tauri::AppHandle, title: String, body: String) {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // Force refresh of donate script
     let donate_script = include_str!("../src/scripts/donate.js");
 
     tauri::Builder::default()
