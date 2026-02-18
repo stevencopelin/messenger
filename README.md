@@ -11,6 +11,8 @@ On mac's i have had a problem dues to not being a auth'd by Apple
 
 in Terminal: xattr -cr /Applications/Messenger.app (or the location of the app)
 
+Couple of small issues that i'll resolve soon, seems to hang every now and then and history can take a little while to update.
+
 Happy playing!!
 
 ## Recommended IDE Setup
