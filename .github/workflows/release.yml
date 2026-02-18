@@ -16,7 +16,7 @@ jobs:
         include:
           - platform: 'macos-latest' # ARM64 (M1/M2/M3)
             args: '--target aarch64-apple-darwin'
-          - platform: 'macos-13'     # Intel (x86_64) - Changed to 13 as 12 is problematic
+          - platform: 'macos-latest' # Intel (x86_64) - Cross-compile from Apple Silicon
             args: '--target x86_64-apple-darwin'
           - platform: 'windows-latest'
             args: ''
@@ -33,7 +33,8 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin' || matrix.platform == 'macos-13' && 'x86_64-apple-darwin' || '' }}
+          # Install the target specified in the args (stripping --target )
+          targets: ${{ matrix.args == '--target aarch64-apple-darwin' && 'aarch64-apple-darwin' || matrix.args == '--target x86_64-apple-darwin' && 'x86_64-apple-darwin' || '' }}
 
       - name: Install dependencies (ubuntu only)
         if: matrix.platform == 'ubuntu-latest'
