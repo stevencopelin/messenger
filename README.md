@@ -1,6 +1,11 @@
-# Tauri + Vanilla
+# Messenger App
 
-This template should help get you started developing with Tauri in vanilla HTML, CSS and Javascript.
+Since Messenger has decided to remove the App for Windows and OSX etc, pluse removal of their .com in April 2026. I had a few friends that wanted an App to run on their desktops.
+
+Its just a wrapper for the messenger end point.
+I'd say FB will most likely cause this to crash at some point, i'll do my bets to keep it updated.
+
+Happy playing!!
 
 ## Recommended IDE Setup
 
