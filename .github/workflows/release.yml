@@ -16,7 +16,7 @@ jobs:
         include:
           - platform: 'macos-latest' # ARM64 (M1/M2/M3)
             args: '--target aarch64-apple-darwin'
-          - platform: 'macos-12'     # Intel (x86_64) - Changed from 13 to avoid runner issues
+          - platform: 'macos-13'     # Intel (x86_64) - Changed to 13 as 12 is problematic
             args: '--target x86_64-apple-darwin'
           - platform: 'windows-latest'
             args: ''
