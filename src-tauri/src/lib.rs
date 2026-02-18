@@ -23,6 +23,21 @@ fn send_notification(app: tauri::AppHandle, title: String, body: String) {
         .show();
 }
 
+#[tauri::command]
+fn update_badge(app: tauri::AppHandle, count: i32) {
+    #[cfg(target_os = "macos")]
+    {
+        use tauri::Manager;
+        if let Some(window) = app.get_webview_window("main") {
+            if count > 0 {
+                let _ = window.set_badge_count(Some(count as i64));
+            } else {
+                let _ = window.set_badge_count(None);
+            }
+        }
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     // Force refresh of donate script
@@ -32,7 +47,7 @@ pub fn run() {
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_window_state::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![donate, credits, send_notification])
+        .invoke_handler(tauri::generate_handler![donate, credits, send_notification, update_badge])
         .setup(move |app| {
             #[cfg(target_os = "macos")]
             {

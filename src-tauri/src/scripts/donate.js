@@ -155,5 +155,42 @@
 
     initNotificationPolyfill();
     init();
+
+    // Badge Updater: Syncs unread count from title to Dock icon
+    function initBadgeUpdater() {
+        if (!window.__TAURI__) return;
+
+        let lastCount = 0;
+
+        const updateBadge = () => {
+            const title = document.title;
+            // Facebook title format: "(1) Messenger" or "Messenger"
+            const match = title.match(/^\((\d+)\)/);
+            const count = match ? parseInt(match[1], 10) : 0;
+
+            if (count !== lastCount) {
+                lastCount = count;
+                window.__TAURI__.core.invoke('update_badge', { count: count })
+                    .catch(e => console.error("Failed to update badge:", e));
+                console.log(`Messenger: Badge updated to ${count}`);
+            }
+        };
+
+        // Observe title changes
+        const observer = new MutationObserver(updateBadge);
+        const titleElement = document.querySelector('title');
+
+        if (titleElement) {
+            observer.observe(titleElement, { childList: true, characterData: true, subtree: true });
+        } else {
+            // Fallback if <title> tag recreation happens (rare but possible in SPAs)
+            setInterval(updateBadge, 2000);
+        }
+
+        // Initial check
+        updateBadge();
+    }
+
+    initBadgeUpdater();
     setTimeout(initKeepAlive, 2000); // Start after initial load
 })();
