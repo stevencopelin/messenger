@@ -14,6 +14,15 @@ fn credits() {
     let _ = open::that("https://www.portfoxdesign.com");
 }
 
+#[tauri::command]
+fn send_notification(app: tauri::AppHandle, title: String, body: String) {
+    use tauri_plugin_notification::NotificationExt;
+    let _ = app.notification().builder()
+        .title(title)
+        .body(body)
+        .show();
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let donate_script = include_str!("../src/scripts/donate.js");
@@ -22,7 +31,7 @@ pub fn run() {
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_window_state::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![donate, credits])
+        .invoke_handler(tauri::generate_handler![donate, credits, send_notification])
         .setup(move |app| {
             #[cfg(target_os = "macos")]
             {
