@@ -19,8 +19,9 @@
                 border: 1px solid #ddd;
                 border-radius: 12px;
                 display: flex;
+                flex-direction: column;
                 align-items: center;
-                justify_content: center;
+                gap: 5px;
                 z-index: 999999;
                 font-family: system-ui, -apple-system, sans-serif;
                 box-shadow: 0 4px 20px rgba(0,0,0,0.15);
@@ -46,7 +47,17 @@
             #tauri-donate-btn:hover {
                 background: #0073e6;
             }
-            /* Optional: Add a close button if needed, but keeping it simple for now */
+            #tauri-credits {
+                font-size: 10px;
+                color: #888;
+                cursor: pointer;
+                text-decoration: none;
+                transition: color 0.2s;
+            }
+            #tauri-credits:hover {
+                color: #0084ff;
+                text-decoration: underline;
+            }
         `;
         document.head.appendChild(style);
 
@@ -58,11 +69,18 @@
         btn.id = 'tauri-donate-btn';
         btn.textContent = 'Donate $5 (Support Development)';
         btn.onclick = function () {
-            // Invoke Rust command
             window.__TAURI__.core.invoke('donate');
         };
 
+        const credits = document.createElement('div');
+        credits.id = 'tauri-credits';
+        credits.textContent = 'Created by Portfox Design';
+        credits.onclick = function () {
+            window.__TAURI__.core.invoke('credits');
+        };
+
         footer.appendChild(btn);
+        footer.appendChild(credits);
         document.body.appendChild(footer);
     }
 

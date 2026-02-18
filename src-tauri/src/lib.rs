@@ -9,6 +9,11 @@ fn donate() {
     let _ = open::that("https://www.paypal.com/donate/?hosted_button_id=HN7Y5376ZLLDQ");
 }
 
+#[tauri::command]
+fn credits() {
+    let _ = open::that("https://www.portfoxdesign.com");
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let donate_script = include_str!("../src/scripts/donate.js");
@@ -17,7 +22,7 @@ pub fn run() {
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_window_state::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![donate])
+        .invoke_handler(tauri::generate_handler![donate, credits])
         .setup(move |app| {
             let quit_i = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
             let show_i = MenuItem::with_id(app, "show", "Show", true, None::<&str>)?;
