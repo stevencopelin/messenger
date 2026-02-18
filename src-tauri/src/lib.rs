@@ -24,6 +24,23 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![donate, credits])
         .setup(move |app| {
+            #[cfg(target_os = "macos")]
+            {
+                use objc2_foundation::{NSActivityOptions, NSProcessInfo, NSString};
+                
+                let process_info = NSProcessInfo::processInfo();
+                let reason = NSString::from_str("Keep socket alive for Messenger");
+                // NSActivityBackground (0x000000FF) | NSActivityLatencyCritical (0xFF00000000)
+                // We use the impressive power of the raw values or just the constants if available.
+                // To be safe with the crate versions, let's use the constants from the crate.
+                let options = NSActivityOptions::Background | NSActivityOptions::LatencyCritical;
+                
+                let activity = process_info.beginActivityWithOptions_reason(options, &reason);
+                // We must keep this token alive. Since we want it for the lifetime of the app,
+                // and we are in setup, we can just leak it.
+                std::mem::forget(activity);
+            }
+
             let quit_i = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
             let show_i = MenuItem::with_id(app, "show", "Show", true, None::<&str>)?;
             let hide_i = MenuItem::with_id(app, "hide", "Hide", true, None::<&str>)?;
