@@ -10,6 +10,8 @@
   ],
   "permissions": [
     "window-state:default",
-    "notification:default"
+    "notification:default",
+    "core:window:allow-request-user-attention",
+    "core:window:allow-set-badge-count"
   ]
 }

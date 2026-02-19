@@ -1,7 +1,7 @@
 use tauri::{
     menu::{Menu, MenuItem},
     tray::TrayIconBuilder,
-    Manager, WebviewUrl, WebviewWindowBuilder,
+    Manager, UserAttentionType, WebviewUrl, WebviewWindowBuilder,
 };
 
 #[tauri::command]
@@ -31,6 +31,7 @@ fn update_badge(app: tauri::AppHandle, count: i32) {
         if let Some(window) = app.get_webview_window("main") {
             if count > 0 {
                 let _ = window.set_badge_count(Some(count as i64));
+                let _ = window.request_user_attention(Some(UserAttentionType::Critical));
             } else {
                 let _ = window.set_badge_count(None);
             }
